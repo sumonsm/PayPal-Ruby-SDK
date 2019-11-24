@@ -176,6 +176,178 @@ module PayPal::SDK
         include RequestDataType
       end
 
+      class Subscription < Base
+        def self.load_members
+          object_of :id, String
+          object_of :plan_id, String
+          object_of :start_time, String
+          object_of :quantity, String
+          object_of :shipping_amount, Currency
+          object_of :subscriber, Subscriber
+          object_of :billing_info, BillingInfo
+          object_of :create_time, String
+          object_of :update_time, String
+          array_of  :links, Links
+          object_of :status, String
+          object_of :status_update_time, String
+        end
+
+        include RequestDataType
+
+        def create()
+          path = "v1/billing/subscriptions"
+          response = api.post(path, self.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def update(patch_requests)
+          patch_request_array = []
+          patch_requests.each do |patch_request|
+            patch_request = Patch.new(patch_request) unless patch_request.is_a? Patch
+            patch_request_array << patch_request.to_hash
+          end
+          path = "v1/billing/subscriptions/#{self.id}"
+          response = api.patch(path, patch_request_array, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def activate(reason)
+          path = "v1/billing/subscriptions/#{self.id}/activate"
+          response = api.post(path, reason.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def cancel(reason)
+          path = "v1/billing/subscriptions/#{self.id}/cancel"
+          response = api.post(path, reason.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def capture(subscription_capture)
+          path = "v1/billing/subscriptions/#{self.id}/capture"
+          response = api.post(path, capture.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def revise(revision)
+          path = "v1/billing/subscriptions/#{self.id}/revise"
+          response = api.post(path, revision.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def suspend(reason)
+          path = "v1/billing/subscriptions/#{self.id}/suspend"
+          response = api.post(path, reason.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def transactions(start_time, end_time)
+          path = "v1/billing/subscriptions/#{self.id}/transactions"
+          options = { :start_time => start_time, :end_time => end_time }
+          self.new(api.get(path, options))
+        end
+
+        raise_on_api_error :create, :update, :activate, :cancel, :capture, :revise, :suspend, :transactions
+
+        class << self
+          def find(resource_id)
+            raise ArgumentError.new("id required") if resource_id.to_s.strip.empty?
+            path = "v1/billing/subscriptions/#{resource_id}"
+            self.new(api.get(path))
+          end
+
+          def all(options = {})
+            path = "v1/billing/subscriptions"
+            PaymentHistory.new(api.get(path, options))
+          end
+        end
+      end
+
+      class Subscriber < Base
+        def self.load_members
+          object_of :shipping_address, ShippingAddress
+          object_of :name, SubscriberName
+          object_of :email_address, String
+        end
+      end
+
+      class ShippingAddress < Base
+        object_of :name, ShippingAddressName
+        object_of :address, Address
+      end
+
+      class SubscriberName < Base
+        object_of :given_name, String
+        object_of :surname, String
+      end
+
+      class ShippingAddressName < Base
+        object_of :name, Name
+      end
+
+      class Name < Base
+        object_of :full_name, String
+      end
+
+      class SubscriptionBillingInfo < Base
+        object_of :outstanding_balance, Currency
+        array_of  :cycle_executions, CycleExecution
+        object_of :last_payment, LastPayment
+        object_of :next_billing_time, String
+        object_of :failed_payments_count, String
+      end
+
+      class CycleExecution < Base
+        object_of :tenure_type, String
+        object_of :sequence, String
+        object_of :cycles_completed, String
+        object_of :cycles_remaining, String
+        object_of :total_cycles, String
+      end
+
+      class LastPayment < Base
+        object_of :amount, Currency
+        object_of :time, String
+      end
+
+      class SubscriptionCapture < Base
+        object_of :note, String
+        object_of :capture_type, String
+        object_of :amount, Currency
+      end
+
+      class Reason < Base
+        object_of :reason, String
+      end
+
+      class Revision < Base
+        object_of :plan_id, String
+        object_of :shipping_amount, Currency
+        object_of :shipping_address, ShippingAddress
+        object_of :application_context, ApplicationContext
+      end
+
+      class ApplicationContext < Base
+        object_of :brand_name, String
+        object_of :locale, String
+        object_of :shipping_preference, String
+        object_of :payment_method, PaymentMethod
+        object_of :return_url, String
+        object_of :cancel_url, String
+      end
+
+      class PaymentMethod < Base
+        object_of :payer_selected, String
+        object_of :payee_preferred, String
+      end
+
       class BillingAgreementToken < Base
         def self.load_members
         end
@@ -369,6 +541,8 @@ module PayPal::SDK
         def self.load_members
           object_of :line1, String
           object_of :line2, String
+          object_of :admin_area_1, String
+          object_of :admin_area_2, String
           object_of :city, String
           object_of :country_code, String
           object_of :postal_code, String
@@ -963,7 +1137,8 @@ module PayPal::SDK
           object_of :transaction_fee, Currency
           object_of :create_time, String
           object_of :update_time, String
-          array_of  :links, Links
+          array_of  :links, Links,
+          object_of :capture_type, String
         end
 
         include RequestDataType
