@@ -176,6 +176,46 @@ module PayPal::SDK
         include RequestDataType
       end
 
+      class Product < Base
+        def self.load_members
+          object_of :name, String
+          object_of :description, String
+          object_of :type, String
+          object_of :category, String
+          object_of :image_url, String
+          object_of :home_url, String
+        end
+
+        include RequestDataType
+
+        def create()
+          path = "v1/catalogs/products"
+          response = api.post(path, self.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        class << self
+          def find(resource_id)
+            raise ArgumentError.new("id required") if resource_id.to_s.strip.empty?
+            path = "v1/catalogs/products/#{resource_id}"
+            self.new(api.get(path))
+          end
+
+          def all()
+            path = "v1/catalogs/products"
+            ProductList.new(api.get(path, options))
+          end
+        end
+      end
+
+      def ProductList < Base
+        def self.load_members
+          array_of :products, Product
+          array_of :links, Links
+        end
+      end
+
       class SubscriptionPlan < Base
         def self.load_members
           object_of :id, String
