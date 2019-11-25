@@ -178,6 +178,7 @@ module PayPal::SDK
 
       class Product < Base
         def self.load_members
+          object_of :id, String
           object_of :name, String
           object_of :description, String
           object_of :type, String
@@ -209,10 +210,19 @@ module PayPal::SDK
         end
       end
 
-      def ProductList < Base
+      class ProductList < Base
         def self.load_members
           array_of :products, Product
           array_of :links, Links
+        end
+      end
+
+      class PaymentPreference < Base
+        def self.load_members
+          object_of :auto_bill_outstanding, Boolean
+          object_of :setup_fee, Currency
+          object_of :setup_fee_failure_action, String
+          object_of :payment_failure_threshold, Integer
         end
       end
 
@@ -223,8 +233,10 @@ module PayPal::SDK
           object_of :name, String
           object_of :description, String
           object_of :status, String
-          array_of :billing_cycles CycleExecution
+          array_of :billing_cycles, CycleExecution
+          object_of :payment_preferences, PaymentPreference
           object_of :taxes, Tax
+          object_of :quantity_supported, Boolean
           object_of :create_time, String
           object_of :update_time, String
           array_of  :links, Links
@@ -317,6 +329,8 @@ module PayPal::SDK
           object_of :shipping_amount, Currency
           object_of :subscriber, Subscriber
           object_of :billing_info, BillingInfo
+          object_of :status_change_note, String
+          object_of :status_update_time, String
           object_of :create_time, String
           object_of :update_time, String
           array_of  :links, Links
