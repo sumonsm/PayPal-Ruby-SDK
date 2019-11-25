@@ -396,7 +396,7 @@ module PayPal::SDK
         def transactions(start_time, end_time)
           path = "v1/billing/subscriptions/#{self.id}/transactions"
           options = { :start_time => start_time, :end_time => end_time }
-          self.new(api.get(path, options))
+          SubscriptionTransactionList.new(api.get(path, options))
         end
 
         raise_on_api_error :create, :update, :activate, :cancel, :capture, :revise, :suspend, :transactions
@@ -500,6 +500,32 @@ module PayPal::SDK
           object_of :shipping_amount, Currency
           object_of :shipping_address, ShippingAddress
           object_of :application_context, ApplicationContext
+        end
+      end
+
+      class SubscriptionTransactionList < Base
+        def self.load_members
+          array_of :transactions, SubscriptionTransaction
+          array_of :links, Links
+        end
+      end
+
+      class SubscriptionTransaction < Base
+        def self.load_members
+          object_of :id, String
+          object_of :status, String
+          object_of :payer_email, String
+          object_of :payer_name, SubscriberName
+          object_of :amount_with_breakdown, AmountWithBreakdown
+          object_of :time, String
+        end
+      end
+
+      class AmountWithBreakdown < Base
+        def self.load_members
+          object_of :gross_amount, Currency
+          object_of :fee_amount, Currency
+          object_of :net_amount, Currency
         end
       end
 
