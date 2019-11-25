@@ -13,7 +13,7 @@ describe "Subscription" do
 
 	SubscriptionPlanAttributes = {
 	  "name": "Monthy Subscription to the Collegian",
-      "status": "CREATED",
+      "status": "ACTIVE",
       "description": "1 print copy of The Collegian delivered to your address.",
       "billing_cycles": [
         {
@@ -122,7 +122,7 @@ describe "Subscription" do
 	}
 
 	describe "Product", :integration => true do
-		xit "Create" do
+		it "Create" do
 	      $api = API.new
 	      $product = Product.new(ProductAttributes.merge( :token => $api.token ))
 	      expect(Product.api).not_to eql $product.api
@@ -134,7 +134,7 @@ describe "Subscription" do
 	      expect($product.id).not_to be_nil
 	    end
 
-	    xit "Find" do
+	    it "Find" do
 	      api = API.new
 	      product = Product.find($product.id)
 	      expect(product.id).to eq($product.id)
@@ -142,7 +142,7 @@ describe "Subscription" do
 	      expect(product.type).to eq("PHYSICAL")
 	    end
 
-	    xit "List" do
+	    it "List" do
 	    	product_list = Product.all()
       		expect(product_list.error).to be_nil
       		expect(product_list.products.count).to be > 0
@@ -150,7 +150,7 @@ describe "Subscription" do
 	end
 
 	describe "Plan", :integration => true do
-		xit "Create" do
+		it "Create" do
 			$api = API.new
 	    	$plan = SubscriptionPlan.new(SubscriptionPlanAttributes.merge( :token => $api.token ))
 	    	$plan.product_id = $product.id	    	
@@ -163,7 +163,7 @@ describe "Subscription" do
 	    	expect($plan.id).not_to be_nil
 		end
 
-		xit "Update" do
+		it "Update" do
 			# set up a patch request
 			patch = Patch.new
 			patch.op = "replace"
@@ -173,29 +173,29 @@ describe "Subscription" do
 			expect($plan.update( patch )).to be_truthy
 		end
 
-		xit "Activate" do
-	      expect( $plan.activate ).to be_truthy
+		it "Deactivate" do
+			expect( $plan.deactivate ).to be_truthy
 		end
 
-		xit "Deactivate" do
-			expect( $plan.deactivate ).to be_truthy
+		it "Activate" do
+	      expect( $plan.activate ).to be_truthy
 		end
 		
 		it "Update Pricing" do
-			$plan = SubscriptionPlan.find('P-80959566P4933662RLXNWE3Y')
+			$plan = SubscriptionPlan.find($plan_id)
 			pricing_schemes = PricingSchemeList.new()
 			pricing_schemes.pricing_schemes << PricingSchemeAttributes #{ :billing_cycle_sequence => 3, :pricing_scheme  => {:fixed_price => {:value => "30", :currency_code => 'USD'}}}
 			$plan.update_pricing(pricing_schemes)
 			expect( $plan.update_pricing(pricing_schemes) ).to be_truthy
 		end
 
-		xit "Find" do
+		it "Find" do
 			plan = SubscriptionPlan.find($plan.id)
 			expect(plan.id).to eq($plan.id)
 		    expect(plan.name).to eq("Monthy Subscription to the Collegian")
 		end
 
-		xit "List" do
+		it "List" do
 			plan_list = SubscriptionPlan.all()
       		expect(plan_list.error).to be_nil
       		expect(plan_list.plans.count).to be > 0
@@ -203,10 +203,10 @@ describe "Subscription" do
 	end
 
 	describe "Subscription", :integration => true do
-		xit "Create" do
+		it "Create" do
 			$api = API.new
 			$subscription = Subscription.new(SubscriptionAttributes.merge( :token => $api.token ))
-			$subscription.plan_id = "P-80959566P4933662RLXNWE3Y" #$plan.id
+			$subscription.plan_id = $plan.id #"P-80959566P4933662RLXNWE3Y"
 			$subscription.create
 
 		    expect($subscription.error).to be_nil
@@ -214,13 +214,14 @@ describe "Subscription" do
 		end
 
 		it "Find" do
-			subscription_id = 'I-1L0VUJJ9X8K5'
+			subscription_id = $subscription.id #'I-1L0VUJJ9X8K5'
 			$subscription = Subscription.find(subscription_id)
 			expect(subscription_id).to eq($subscription.id)
-		    expect('P-80959566P4933662RLXNWE3Y').to eq($subscription.plan_id)
+		    expect($plan.id).to eq($subscription.plan_id)
 		end
 
-		xit "Update" do
+		it "Update" do
+			$subscription = Subscription.find('I-0B7813AYW19B') #subscription created earlier needs to be approved by the user
 			patch = Patch.new
 			patch.op = "replace"
 			patch.path = "/shipping_amount"
@@ -245,24 +246,24 @@ describe "Subscription" do
 			expect($subscription.capture(subscription_capture)).to be_truthy
 		end
 
-		xit "Revise" do
+		it "Revise" do
 			revision = {
 				"quantity": 2
 			}
 			expect($subscription.revise(revision)).to be_truthy
 		end
 
-		xit "Suspend" do 
+		it "Suspend" do 
 			reason = {"reason":"Closed for Winter break"}
 			expect($subscription.suspend(reason)).to be_truthy
 		end
 
-		xit "Activate" do
+		it "Activate" do
 			reason = {"reason":"Open for Spring"}
 			expect($subscription.activate(reason)).to be_truthy
 		end
 
-		xit "Cancel" do
+		it "Cancel" do
 			reason = {"reason":"Closing circulation"}
 			expect($subscription.cancel(reason)).to be_truthy
 		end
