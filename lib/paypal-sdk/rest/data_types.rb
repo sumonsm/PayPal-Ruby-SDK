@@ -203,7 +203,7 @@ module PayPal::SDK
             self.new(api.get(path))
           end
 
-          def all()
+          def all(options = {})
             path = "v1/catalogs/products"
             ProductList.new(api.get(path, options))
           end
@@ -219,8 +219,8 @@ module PayPal::SDK
 
       class PaymentPreference < Base
         def self.load_members
-          object_of :auto_bill_outstanding, Boolean
           object_of :setup_fee, Currency
+          object_of :auto_bill_outstanding, Boolean
           object_of :setup_fee_failure_action, String
           object_of :payment_failure_threshold, Integer
         end
@@ -237,6 +237,7 @@ module PayPal::SDK
           object_of :payment_preferences, PaymentPreference
           object_of :taxes, Tax
           object_of :quantity_supported, Boolean
+          object_of :reason, String
           object_of :create_time, String
           object_of :update_time, String
           array_of  :links, Links
@@ -251,35 +252,32 @@ module PayPal::SDK
           success?
         end
 
-        def update(patch_requests)
-          patch_request_array = []
-          patch_requests.each do |patch_request|
-            patch_request = Patch.new(patch_request) unless patch_request.is_a? Patch
-            patch_request_array << patch_request.to_hash
-          end
+        def update(patch)
+          patch = Patch.new(patch) unless patch.is_a? Patch
+          patch_request = Array.new(1, patch.to_hash)
           path = "v1/billing/plans/#{self.id}"
-          response = api.patch(path, patch_request_array, http_header)
+          response = api.patch(path, patch_request, http_header)
           self.merge!(response)
           success?
         end
 
         def activate()
           path = "v1/billing/plans/#{self.id}/activate"
-          response = api.post(path, reason.to_hash, http_header)
+          response = api.post(path, self.to_hash, http_header)
           self.merge!(response)
           success?
         end
 
         def deactivate()
           path = "v1/billing/plans/#{self.id}/deactivate"
-          response = api.post(path, reason.to_hash, http_header)
+          response = api.post(path, self.to_hash, http_header)
           self.merge!(response)
           success?
         end
 
         def update_pricing(pricing_schemes)
-          path = "v1/billing/plans/#{self.id}/deactivate"
-          response = api.post(path, reason.to_hash, http_header)
+          path = "v1/billing/plans/#{self.id}/update-pricing-schemes"
+          response = api.post(path, pricing_schemes.to_hash, http_header)
           self.merge!(response)
           success?
         end
@@ -291,7 +289,7 @@ module PayPal::SDK
             self.new(api.get(path))
           end
 
-          def all()
+          def all(options = {})
             path = "v1/billing/plans"
             SubscriptionPlanList.new(api.get(path, options))
           end
@@ -315,8 +313,9 @@ module PayPal::SDK
 
       class PricingScheme < Base
         def self.load_members
+          object_of :version, Integer
           object_of :billing_cycle_sequence, Integer
-          object_of :pricing_scheme, Currency
+          object_of :fixed_price, Currency
         end
       end
 
@@ -463,6 +462,7 @@ module PayPal::SDK
           object_of :cycles_remaining, String
           object_of :total_cycles, String
           object_of :frequency, Frequency
+          object_of :pricing_scheme, PricingScheme
         end
       end
 
@@ -875,6 +875,7 @@ module PayPal::SDK
       class Currency < Base
         def self.load_members
           object_of :currency, String
+          object_of :currency_code, String
           object_of :value, String
         end
       end
@@ -2331,6 +2332,7 @@ module PayPal::SDK
           object_of :id, String
           object_of :name, String
           object_of :percent, Number
+          object_of :percentage, Number
           object_of :amount, Currency
           object_of :inclusive, String
         end

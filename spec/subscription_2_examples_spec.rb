@@ -12,7 +12,7 @@ describe "Subscription" do
 
 	SubscriptionPlanAttributes = {
 	  "name": "Monthy Subscription to the Collegian",
-      "status": "ACTIVE",
+      "status": "CREATED",
       "description": "1 print copy of The Collegian delivered to your address.",
       "billing_cycles": [
         {
@@ -49,7 +49,7 @@ describe "Subscription" do
       "payment_preferences": {
         "auto_bill_outstanding": true,
         "setup_fee": {
-          "value": "0",
+          "value": "5",
           "currency_code": "USD"
         },
         "setup_fee_failure_action": "CONTINUE",
@@ -103,6 +103,19 @@ describe "Subscription" do
 	  }
 	}
 
+	PricingSchemeListAttributes = [
+		{
+	      "billing_cycle_sequence": 2,
+	      "pricing_scheme": {
+	      	"version": 1,
+	        "fixed_price": {
+	          "value": "35",
+	          "currency_code": "USD"
+	        }
+	      }
+		}
+	]
+
 	describe "Product", :integration => true do
 		it "Create" do
 	      $api = API.new
@@ -129,6 +142,57 @@ describe "Subscription" do
       		expect(product_list.error).to be_nil
       		expect(product_list.products.count).to be > 0
 	    end
+	end
+
+	describe "Plan", :integration => true do
+		it "Create" do
+			$api = API.new
+	    	$plan = SubscriptionPlan.new(SubscriptionPlanAttributes.merge( :token => $api.token ))
+	    	$plan.product_id = $product.id	    	
+	    	expect(SubscriptionPlan.api).not_to eql $plan.api
+	    	$plan.create
+
+	    	# make sure the transaction was successful
+	    	$plan_id = $plan.id
+	    	expect($plan.error).to be_nil
+	    	expect($plan.id).not_to be_nil
+		end
+
+		xit "Update" do
+			# set up a patch request
+			patch = Patch.new
+			patch.op = "replace"
+			patch.path = "/payment_preferences/payment_failure_threshold";
+			patch.value = 7
+			# the patch request should be successful
+			expect($plan.update( patch )).to be_truthy
+		end
+
+		it "Activate" do
+	      expect( $plan.activate ).to be_truthy
+		end
+
+		xit "Deactivate" do
+			expect( $plan.deactivate ).to be_truthy
+		end
+
+		it "Update Pricing" do
+			#pricing_scheme = PricingScheme.new(PricingSchemeAttributes)
+			pricing_schemes = PricingSchemeList.new(PricingSchemeListAttributes)
+			expect( $plan.update_pricing(pricing_schemes) ).to be_truthy
+		end
+
+		xit "Find" do
+			plan = SubscriptionPlan.find($plan.id)
+			expect(plan.id).to eq($plan.id)
+		    expect(plan.name).to eq("Monthy Subscription to the Collegian")
+		end
+
+		xit "List" do
+			plan_list = SubscriptionPlan.all()
+      		expect(plan_list.error).to be_nil
+      		expect(plan_list.plans.count).to be > 0
+		end
 	end
 
 end
