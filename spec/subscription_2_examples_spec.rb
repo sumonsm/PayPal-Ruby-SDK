@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'time'
 
 describe "Subscription" do
 	ProductAttributes = {
@@ -62,8 +63,9 @@ describe "Subscription" do
       "quantity_supported": true
 	}
 
+	start_time = (Time.now + 60).iso8601
 	SubscriptionAttributes = {
-	  "start_time": "2019-11-24T00:00:00Z",
+	  "start_time": start_time,
 	  "quantity": "3",
 	  "shipping_amount": {
 	    "currency_code": "USD",
@@ -103,21 +105,24 @@ describe "Subscription" do
 	  }
 	}
 
-	PricingSchemeListAttributes = [
+	PricingSchemeAttributes = 
 		{
-	      "billing_cycle_sequence": 2,
+	      "billing_cycle_sequence": 2, #nth billing, must be unique to the plan
 	      "pricing_scheme": {
-	      	"version": 1,
 	        "fixed_price": {
 	          "value": "35",
 	          "currency_code": "USD"
 	        }
 	      }
 		}
-	]
+
+	OutstandingBalanceAttributes = {
+		"currency_code": "USD",
+		"value": "50.00"
+	}
 
 	describe "Product", :integration => true do
-		it "Create" do
+		xit "Create" do
 	      $api = API.new
 	      $product = Product.new(ProductAttributes.merge( :token => $api.token ))
 	      expect(Product.api).not_to eql $product.api
@@ -129,7 +134,7 @@ describe "Subscription" do
 	      expect($product.id).not_to be_nil
 	    end
 
-	    it "Find" do
+	    xit "Find" do
 	      api = API.new
 	      product = Product.find($product.id)
 	      expect(product.id).to eq($product.id)
@@ -137,7 +142,7 @@ describe "Subscription" do
 	      expect(product.type).to eq("PHYSICAL")
 	    end
 
-	    it "List" do
+	    xit "List" do
 	    	product_list = Product.all()
       		expect(product_list.error).to be_nil
       		expect(product_list.products.count).to be > 0
@@ -145,7 +150,7 @@ describe "Subscription" do
 	end
 
 	describe "Plan", :integration => true do
-		it "Create" do
+		xit "Create" do
 			$api = API.new
 	    	$plan = SubscriptionPlan.new(SubscriptionPlanAttributes.merge( :token => $api.token ))
 	    	$plan.product_id = $product.id	    	
@@ -168,17 +173,19 @@ describe "Subscription" do
 			expect($plan.update( patch )).to be_truthy
 		end
 
-		it "Activate" do
+		xit "Activate" do
 	      expect( $plan.activate ).to be_truthy
 		end
 
 		xit "Deactivate" do
 			expect( $plan.deactivate ).to be_truthy
 		end
-
+		
 		it "Update Pricing" do
-			#pricing_scheme = PricingScheme.new(PricingSchemeAttributes)
-			pricing_schemes = PricingSchemeList.new(PricingSchemeListAttributes)
+			$plan = SubscriptionPlan.find('P-80959566P4933662RLXNWE3Y')
+			pricing_schemes = PricingSchemeList.new()
+			pricing_schemes.pricing_schemes << PricingSchemeAttributes #{ :billing_cycle_sequence => 3, :pricing_scheme  => {:fixed_price => {:value => "30", :currency_code => 'USD'}}}
+			$plan.update_pricing(pricing_schemes)
 			expect( $plan.update_pricing(pricing_schemes) ).to be_truthy
 		end
 
@@ -194,5 +201,77 @@ describe "Subscription" do
       		expect(plan_list.plans.count).to be > 0
 		end
 	end
+
+	describe "Subscription", :integration => true do
+		xit "Create" do
+			$api = API.new
+			$subscription = Subscription.new(SubscriptionAttributes.merge( :token => $api.token ))
+			$subscription.plan_id = "P-80959566P4933662RLXNWE3Y" #$plan.id
+			$subscription.create
+
+		    expect($subscription.error).to be_nil
+		    expect($subscription.id).not_to be_nil
+		end
+
+		it "Find" do
+			subscription_id = 'I-1L0VUJJ9X8K5'
+			$subscription = Subscription.find(subscription_id)
+			expect(subscription_id).to eq($subscription.id)
+		    expect('P-80959566P4933662RLXNWE3Y').to eq($subscription.plan_id)
+		end
+
+		xit "Update" do
+			patch = Patch.new
+			patch.op = "replace"
+			patch.path = "/shipping_amount"
+			patch.value = {
+		    	"currency_code": "USD",
+    			"value": "10.0"
+		    }
+			# the patch request should be successful
+			expect($subscription.update( [patch] )).to be_truthy
+
+		end
+
+		xit "Capture" do
+			subscription_capture = {
+				"note": "Charging as the balance reached the limit",
+				"capture_type": "OUTSTANDING_BALANCE",
+				"amount": {
+					"value": "50",
+					"currency_code": "USD"
+					}
+				}
+			expect($subscription.capture(subscription_capture)).to be_truthy
+		end
+
+		xit "Revise" do
+			revision = {
+				"quantity": 2
+			}
+			expect($subscription.revise(revision)).to be_truthy
+		end
+
+		xit "Suspend" do 
+			reason = {"reason":"Closed for Winter break"}
+			expect($subscription.suspend(reason)).to be_truthy
+		end
+
+		xit "Activate" do
+			reason = {"reason":"Open for Spring"}
+			expect($subscription.activate(reason)).to be_truthy
+		end
+
+		xit "Cancel" do
+			reason = {"reason":"Closing circulation"}
+			expect($subscription.cancel(reason)).to be_truthy
+		end
+
+		it "Transactions" do
+			start_time = (Time.now - 7200).iso8601
+			end_time = (Time.now + 7200).iso8601
+			expect($subscription.transactions(start_time, end_time).transactions.count).to be > 0
+		end
+ 	end
 
 end
