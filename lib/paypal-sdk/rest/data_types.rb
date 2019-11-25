@@ -176,6 +176,98 @@ module PayPal::SDK
         include RequestDataType
       end
 
+      class SubscriptionPlan < Base
+        def self.load_members
+          object_of :id, String
+          object_of :product_id, String
+          object_of :name, String
+          object_of :description, String
+          object_of :status, String
+          array_of :billing_cycles CycleExecution
+          object_of :taxes, Tax
+          object_of :create_time, String
+          object_of :update_time, String
+          array_of  :links, Links
+        end
+
+        include RequestDataType
+
+        def create()
+          path = "v1/billing/plans"
+          response = api.post(path, self.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def update(patch_requests)
+          patch_request_array = []
+          patch_requests.each do |patch_request|
+            patch_request = Patch.new(patch_request) unless patch_request.is_a? Patch
+            patch_request_array << patch_request.to_hash
+          end
+          path = "v1/billing/plans/#{self.id}"
+          response = api.patch(path, patch_request_array, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def activate()
+          path = "v1/billing/plans/#{self.id}/activate"
+          response = api.post(path, reason.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def deactivate()
+          path = "v1/billing/plans/#{self.id}/deactivate"
+          response = api.post(path, reason.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        def update_pricing(pricing_schemes)
+          path = "v1/billing/plans/#{self.id}/deactivate"
+          response = api.post(path, reason.to_hash, http_header)
+          self.merge!(response)
+          success?
+        end
+
+        class << self
+          def find(resource_id)
+            raise ArgumentError.new("id required") if resource_id.to_s.strip.empty?
+            path = "v1/billing/plans/#{resource_id}"
+            self.new(api.get(path))
+          end
+
+          def all()
+            path = "v1/billing/plans"
+            SubscriptionPlanList.new(api.get(path, options))
+          end
+        end
+      end
+
+      class SubscriptionPlanList < Base
+        def self.load_members
+          array_of  :plans, SubscriptionPlan
+          object_of :total_items, String
+          object_of :total_pages, String
+          array_of  :links, Links
+        end
+      end
+
+      class PricingSchemeList < Base
+        def self.load_members
+          array_of :pricing_schemes, PricingScheme
+        end
+      end
+
+      class PricingScheme < Base
+        def self.load_members
+          object_of :billing_cycle_sequence, Integer
+          object_of :pricing_scheme, Currency
+        end
+      end
+
       class Subscription < Base
         def self.load_members
           object_of :id, String
@@ -262,11 +354,6 @@ module PayPal::SDK
             path = "v1/billing/subscriptions/#{resource_id}"
             self.new(api.get(path))
           end
-
-          def all(options = {})
-            path = "v1/billing/subscriptions"
-            PaymentHistory.new(api.get(path, options))
-          end
         end
       end
 
@@ -279,68 +366,98 @@ module PayPal::SDK
       end
 
       class ShippingAddress < Base
-        object_of :name, ShippingAddressName
-        object_of :address, Address
+        def self.load_members
+          object_of :name, ShippingAddressName
+          object_of :address, Address
+        end
       end
 
       class SubscriberName < Base
-        object_of :given_name, String
-        object_of :surname, String
+        def self.load_members
+          object_of :given_name, String
+          object_of :surname, String
+        end
       end
 
       class ShippingAddressName < Base
-        object_of :name, Name
+        def self.load_members
+          object_of :name, String
+        end
       end
 
       class Name < Base
-        object_of :full_name, String
+        def self.load_members
+          object_of :full_name, String
+        end
       end
 
       class SubscriptionBillingInfo < Base
-        object_of :outstanding_balance, Currency
-        array_of  :cycle_executions, CycleExecution
-        object_of :last_payment, LastPayment
-        object_of :next_billing_time, String
-        object_of :failed_payments_count, String
+        def self.load_members
+          object_of :outstanding_balance, Currency
+          array_of  :cycle_executions, CycleExecution
+          object_of :last_payment, LastPayment
+          object_of :next_billing_time, String
+          object_of :failed_payments_count, String
+        end
       end
 
       class CycleExecution < Base
-        object_of :tenure_type, String
-        object_of :sequence, String
-        object_of :cycles_completed, String
-        object_of :cycles_remaining, String
-        object_of :total_cycles, String
+        def self.load_members
+          object_of :tenure_type, String
+          object_of :sequence, String
+          object_of :cycles_completed, String
+          object_of :cycles_remaining, String
+          object_of :total_cycles, String
+          object_of :frequency, Frequency
+        end
+      end
+
+      class Frequency < Base
+        def self.load_members
+          object_of :interval_unit, String
+          object_of :interval_count, Integer
+        end
       end
 
       class LastPayment < Base
-        object_of :amount, Currency
-        object_of :time, String
+        def self.load_members
+          object_of :amount, Currency
+          object_of :time, String
+        end
       end
 
       class SubscriptionCapture < Base
-        object_of :note, String
-        object_of :capture_type, String
-        object_of :amount, Currency
+        def self.load_members
+          object_of :note, String
+          object_of :capture_type, String
+          object_of :amount, Currency
+        end
       end
 
       class Reason < Base
-        object_of :reason, String
+        def self.load_members
+          object_of :reason, String
+        end
       end
 
       class Revision < Base
-        object_of :plan_id, String
-        object_of :shipping_amount, Currency
-        object_of :shipping_address, ShippingAddress
-        object_of :application_context, ApplicationContext
+        def self.load_members
+          object_of :plan_id, String
+          object_of :shipping_amount, Currency
+          object_of :shipping_address, ShippingAddress
+          object_of :application_context, ApplicationContext
+        end
       end
 
       class ApplicationContext < Base
-        object_of :brand_name, String
-        object_of :locale, String
-        object_of :shipping_preference, String
-        object_of :payment_method, PaymentMethod
-        object_of :return_url, String
-        object_of :cancel_url, String
+        def self.load_members
+          object_of :brand_name, String
+          object_of :locale, String
+          object_of :shipping_preference, String
+          object_of :payment_method, PaymentMethod
+          object_of :return_url, String
+          object_of :cancel_url, String
+        end
       end
 
       class PaymentMethod < Base
@@ -2161,6 +2278,7 @@ module PayPal::SDK
           object_of :name, String
           object_of :percent, Number
           object_of :amount, Currency
+          object_of :inclusive, String
         end
       end
 
