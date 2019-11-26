@@ -399,6 +399,12 @@ module PayPal::SDK
           SubscriptionTransactionList.new(api.get(path, options))
         end
 
+        def approval_url(immediate = false)
+          link = links.detect { |l| l.rel == 'approve' }
+          return nil unless link
+          link.href + (immediate ? '&useraction=commit' : '')
+        end
+
         raise_on_api_error :create, :update, :activate, :cancel, :capture, :revise, :suspend, :transactions
 
         class << self

@@ -1,3 +1,4 @@
+# rspec spec/subscription_2_examples_spec.rb --example 'Subscription' 
 require 'spec_helper'
 require 'time'
 
@@ -206,21 +207,25 @@ describe "Subscription" do
 		it "Create" do
 			$api = API.new
 			$subscription = Subscription.new(SubscriptionAttributes.merge( :token => $api.token ))
-			$subscription.plan_id = $plan.id #"P-80959566P4933662RLXNWE3Y"
+			$subscription.plan_id = $plan.id
 			$subscription.create
 
 		    expect($subscription.error).to be_nil
 		    expect($subscription.id).not_to be_nil
 		end
 
-		it "Find" do
-			subscription_id = $subscription.id #'I-1L0VUJJ9X8K5'
+		xit "Find" do
+			subscription_id = $subscription.id
 			$subscription = Subscription.find(subscription_id)
 			expect(subscription_id).to eq($subscription.id)
 		    expect($plan.id).to eq($subscription.plan_id)
 		end
 
-		it "Update" do
+		it "Approval Link" do 
+			expect($subscription.approval_url).to be
+		end
+		
+		xit "Update" do
 			$subscription = Subscription.find('I-VPS2DB7LBUSB') #subscription created earlier needs to be approved by the user
 			patch = Patch.new
 			patch.op = "replace"
@@ -246,29 +251,30 @@ describe "Subscription" do
 			expect($subscription.capture(subscription_capture)).to be_truthy
 		end
 
-		it "Revise" do
+		xit "Revise" do
+			$subscription = Subscription.find("I-E0C12828TYDW")
 			revision = {
 				"quantity"=> 2
 			}
 			expect($subscription.revise(revision)).to be_truthy
 		end
 
-		it "Suspend" do 
+		xit "Suspend" do 
 			reason = {"reason"=>"Closed for Winter break"}
 			expect($subscription.suspend(reason)).to be_truthy
 		end
 
-		it "Activate" do
+		xit "Activate" do
 			reason = {"reason"=>"Open for Spring"}
 			expect($subscription.activate(reason)).to be_truthy
 		end
 
-		it "Cancel" do
+		xit "Cancel" do
 			reason = {"reason"=>"Closing circulation"}
 			expect($subscription.cancel(reason)).to be_truthy
 		end
 
-		it "Transactions" do
+		xit "Transactions" do
 			start_time = (Time.now - 7200).iso8601
 			end_time = (Time.now + 7200).iso8601
 			expect($subscription.transactions(start_time, end_time).transactions.count).to be > 0
