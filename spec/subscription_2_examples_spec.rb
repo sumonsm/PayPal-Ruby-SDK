@@ -184,7 +184,7 @@ describe "Subscription" do
 		it "Update Pricing" do
 			$plan = SubscriptionPlan.find($plan_id)
 			pricing_schemes = PricingSchemeList.new()
-			pricing_schemes.pricing_schemes << PricingSchemeAttributes #{ :billing_cycle_sequence => 3, :pricing_scheme  => {:fixed_price => {:value => "30", :currency_code => 'USD'}}}
+			pricing_schemes.pricing_schemes << PricingSchemeAttributes
 			$plan.update_pricing(pricing_schemes)
 			expect( $plan.update_pricing(pricing_schemes) ).to be_truthy
 		end
@@ -226,8 +226,8 @@ describe "Subscription" do
 			patch.op = "replace"
 			patch.path = "/shipping_amount"
 			patch.value = {
-		    	"currency_code": "USD",
-    			"value": "10.0"
+		    	"currency_code" => "USD",
+    			"value" => "10.0"
 		    }
 			# the patch request should be successful
 			expect($subscription.update( [patch] )).to be_truthy
@@ -236,11 +236,11 @@ describe "Subscription" do
 
 		xit "Capture" do
 			subscription_capture = {
-				"note": "Charging as the balance reached the limit",
-				"capture_type": "OUTSTANDING_BALANCE",
-				"amount": {
-					"value": "50",
-					"currency_code": "USD"
+				"note"=> "Charging as the balance reached the limit",
+				"capture_type"=> "OUTSTANDING_BALANCE",
+				"amount"=> {
+					"value"=> "50",
+					"currency_code"=> "USD"
 					}
 				}
 			expect($subscription.capture(subscription_capture)).to be_truthy
@@ -248,23 +248,23 @@ describe "Subscription" do
 
 		it "Revise" do
 			revision = {
-				"quantity": 2
+				"quantity"=> 2
 			}
 			expect($subscription.revise(revision)).to be_truthy
 		end
 
 		it "Suspend" do 
-			reason = {"reason":"Closed for Winter break"}
+			reason = {"reason"=>"Closed for Winter break"}
 			expect($subscription.suspend(reason)).to be_truthy
 		end
 
 		it "Activate" do
-			reason = {"reason":"Open for Spring"}
+			reason = {"reason"=>"Open for Spring"}
 			expect($subscription.activate(reason)).to be_truthy
 		end
 
 		it "Cancel" do
-			reason = {"reason":"Closing circulation"}
+			reason = {"reason"=>"Closing circulation"}
 			expect($subscription.cancel(reason)).to be_truthy
 		end
 
